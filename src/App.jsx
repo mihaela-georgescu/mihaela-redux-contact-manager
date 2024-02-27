@@ -1,35 +1,84 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from 'react';
+import { client } from './api/test';
+import { Button } from './components/ui/Button';
+import { useDispatch, useSelector } from 'react-redux';
+import { Footer } from './components/Footer';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [name, setName] = useState('');
+  const [message, setMessage] = useState('');
+  const dispatch = useDispatch();
+  const sse = useSelector(({ counter }) => {
+    return counter;
+  });
+
+  useEffect(() => {
+    client
+      .get('/profile')
+      .then((response) => {
+        const { data } = response;
+
+        setName(data.name);
+      })
+      .catch((response) => {
+        const { code } = response;
+
+        if (code === 'ERR_NETWORK') {
+          setMessage('Could not fetch data');
+        }
+      });
+  }, []);
+
+  if (message.trim().length > 0) {
+    return <div>{message}</div>;
+  }
 
   return (
     <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
+      <h1 className="text-3xl font-bold underline">
+        {name.trim().length <= 0 ? '...loading' : name}
+
+        <Button>aici se proiecteaza children elements</Button>
+      </h1>
+
+      <div className="mt-14">
+        <button
+          onClick={() => {
+            dispatch({
+              type: 'decrement',
+            });
+          }}
+        >
+          -
         </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
+
+        <span className="mx-8">{sse}</span>
+
+        <button
+          onClick={() => {
+            dispatch({
+              type: 'increment',
+            });
+          }}
+        >
+          +
+        </button>
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+
+      <button
+        onClick={() => {
+          dispatch({
+            type: 'add',
+            payload: 42,
+          });
+        }}
+      >
+        Add 42
+      </button>
+
+      <Footer value={sse}></Footer>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
